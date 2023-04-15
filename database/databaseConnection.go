@@ -1,11 +1,6 @@
-
-
-
 package database
 
-
-
-import(
+import (
 	"context"
 	"fmt"
 	"github.com/joho/godotenv"

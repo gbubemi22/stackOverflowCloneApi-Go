@@ -1,14 +1,12 @@
-
 package main
 
-
 import (
-	"log"
-	"os"
+	routes "github.com/gbubemi22/go-stackOverflow/routers"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
+	"log"
+	"os"
 )
-
 
 func main() {
 
@@ -27,8 +25,8 @@ func main() {
 	router := gin.New()
 	router.Use(gin.Logger())
 
-	// routes.AuthRoutes(router)
-	// routes.UserRoutes(router)
+	 routes.AuthRoutes(router)
+	 routes.UserRoutes(router)
 
 	router.GET("/api-1", func(c *gin.Context) {
 		c.JSON(200, gin.H{"success": "Access granted for api-1"})
