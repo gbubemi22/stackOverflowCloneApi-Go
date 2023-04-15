@@ -1,7 +1,7 @@
 package routes
 
 import (
-	controllers "github.com/gbubemi22/go-stackOverflow/controllers"
+	controller "github.com/gbubemi22/go-stackOverflow/controllers"
 	"github.com/gin-gonic/gin"
 )
 
