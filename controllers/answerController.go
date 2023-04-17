@@ -1,5 +1,6 @@
 package controllers
 
+
 import (
 	"context"
 	"fmt"
@@ -19,26 +20,27 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-var qestionCollection *mongo.Collection = database.OpenCollection(database.Client, "question")
-//var validate = *validator.New()
+var answerCollection *mongo.Collection = database.OpenCollection(database.Client, "answer")
+//var validate = validator.New()
 
-func CreatQestion() gin.HandlerFunc {
+func CreatAnswer() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
 		var question models.Question
 		var user models.User
+		var answer models.Answer
 
-		if err := c.BindJSON(&question); err != nil {
+		if err := c.BindJSON(&answer); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
 
-		// validationErr := validate.Struct(question)
+		// validationErr := validate.Struct(answer)
 		// if validationErr != nil {
 		// 	c.JSON(http.StatusBadRequest, gin.H{"error": validationErr.Error()})
 		// 	return
 		// }
-		err := userCollection.FindOne(ctx, bson.M{"user_id": question.User_id}).Decode(&user)
+		err := userCollection.FindOne(ctx, bson.M{"user_id": answer.User_id}).Decode(&user)
 		defer cancel()
 
 		if err != nil {
@@ -47,15 +49,22 @@ func CreatQestion() gin.HandlerFunc {
 			return
 		}
 
-		question.Created_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
-		question.Updated_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
+		// err := qestionCollection.FindOne(ctx, bson.M{"questionId": answer.QuestionId}).Decode(&question)
+		// defer cancel()
 
-		question.ID = primitive.NewObjectID()
-		question.Question_id = question.ID.Hex()
+		// if err != nil {
+		// 	msg := fmt.Sprintf("qestion was not found")
+		// 	c.JSON(http.StatusInternalServerError, gin.H{"error": msg})
+		// 	return
+		// }
 
-		
+		answer.Created_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
+		answer.Updated_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
 
-		result, insertErr := qestionCollection.InsertOne(ctx, question)
+		answer.ID = primitive.NewObjectID()
+		answer.Answer_id = answer.ID.Hex()
+
+		result, insertErr := answerCollection.InsertOne(ctx, question)
 
 		if insertErr != nil {
 			msg := fmt.Sprintf("Qestion item was not created")
@@ -67,48 +76,52 @@ func CreatQestion() gin.HandlerFunc {
 	}
 }
 
-func GetOneQestion() gin.HandlerFunc {
+
+func GetOneAnswer() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
-		questionId := c.Param("question_id")
-		var question models.Question
+		answerId := c.Param("answer_id")
+		var answer models.Answer
 
-		err := qestionCollection.FindOne(ctx, bson.M{"question_id": questionId}).Decode(&question)
+		err := answerCollection.FindOne(ctx, bson.M{"answer_id": answerId}).Decode(&answer)
 		defer cancel()
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "error occured while fetching this qestion"})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "error occured while fetching this Answer"})
 		}
-		c.JSON(http.StatusOK, question)
+		c.JSON(http.StatusOK, answer)
 	}
 }
 
-func GetAllQuestion() gin.HandlerFunc {
+
+func GetAllQAnswer() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
 
-		result, err := qestionCollection.Find(context.TODO(), bson.M{})
+		result, err := answerCollection.Find(context.TODO(), bson.M{})
 		defer cancel()
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "error occured while fatching All Qestions"})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "error occured while fatching All Answers"})
 		}
 
-		var allQestions []bson.M
-		if err = result.All(ctx, &allQestions); err != nil {
+		var allAnswers []bson.M
+		if err = result.All(ctx, &allAnswers); err != nil {
 
 			log.Fatal(err)
 		}
-		c.JSON(http.StatusOK, allQestions)
+		c.JSON(http.StatusOK, allAnswers)
 		return
 	}
 }
 
-func UpdateQestion() gin.HandlerFunc {
+
+func UpdateAnswer() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
 		var question models.Question
 		var user models.User
+		var answer models.Answer
 
-		qestionId := c.Param("qestion_id")
+		answerId := c.Param("answer_id")
 
 		if err := c.BindJSON(&question); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -117,17 +130,27 @@ func UpdateQestion() gin.HandlerFunc {
 
 		var updateObj primitive.D
 
-		if question.Title != nil {
+		if answer.Body != nil {
 			updateObj = append(updateObj, bson.E{"title", question.Title})
 		}
 
-		if question.Body != nil {
-			updateObj = append(updateObj, bson.E{"body", question.Body})
+		
+
+
+		if answer.User_id != nil {
+			err := userCollection.FindOne(ctx, bson.M{"user_id": question.User_id}).Decode(&user)
+			defer cancel()
+			
+			if err != nil {
+				msg := fmt.Sprintf("message:User was not found")
+				c.JSON(http.StatusInternalServerError, gin.H{"error": msg})
+				return
+			}
+
 		}
 
-
-		if question.User_id != nil {
-			err := userCollection.FindOne(ctx, bson.M{"user_id": question.User_id}).Decode(&user)
+		if answer.Question_id != nil {
+			err := qestionCollection.FindOne(ctx, bson.M{"question_id": answer.Question_id}).Decode(&question)
 			defer cancel()
 			if err != nil {
 				msg := fmt.Sprintf("message:User was not found")
@@ -137,17 +160,17 @@ func UpdateQestion() gin.HandlerFunc {
 
 		}
 
-		question.Updated_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
-		updateObj = append(updateObj, bson.E{"updated_at", question.Updated_at})
+		answer.Updated_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
+		updateObj = append(updateObj, bson.E{"updated_at", answer.Updated_at})
 
 		upsert := true
-		filter := bson.M{"question_id": qestionId}
+		filter := bson.M{"answer_id": answerId}
 
 		opt := options.UpdateOptions{
 			Upsert: &upsert,
 		}
 
-		result, err := qestionCollection.UpdateOne(
+		result, err := answerCollection.UpdateOne(
 			ctx,
 			filter,
 			bson.D{
@@ -157,7 +180,7 @@ func UpdateQestion() gin.HandlerFunc {
 		)
 
 		if err != nil {
-			msg := fmt.Sprint(" question update failed")
+			msg := fmt.Sprint(" answer update failed")
 			c.JSON(http.StatusInternalServerError, gin.H{"error": msg})
 			return
 		}

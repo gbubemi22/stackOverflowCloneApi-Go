@@ -19,6 +19,7 @@ import (
 )
 
 var userCollection *mongo.Collection = database.OpenCollection(database.Client, "user")
+
 //var validate = validator.New()
 
 func HashPassword(password string) string {
@@ -54,11 +55,11 @@ func Signup() gin.HandlerFunc {
 		defer cancel()
 		//return
 
-		validationErr := validate.Struct(user)
-		if validationErr != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": validationErr.Error()})
-			return
-		}
+		// validationErr := validate.Struct(user)
+		// if validationErr != nil {
+		// 	c.JSON(http.StatusBadRequest, gin.H{"error": validationErr.Error()})
+		// 	return
+		// }
 
 		count, err := userCollection.CountDocuments(ctx, bson.M{"email": user.Email})
 		defer cancel()
