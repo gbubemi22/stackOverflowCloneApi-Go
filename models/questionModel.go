@@ -15,4 +15,5 @@ type Question struct {
 	Updated_at  time.Time          `bson:"updated_at,omitempty" json:"updated_at,omitempty"`
 	Question_id string             `bson:"question_id,omitempty" json:"question_id,omitempty"`
 	Likes       []string           `bson:"likes,omitempty" json:"likes,omitempty"`
+	Image       *string            `bson:"image,omitempty" json:"image,omitempty"`
 }

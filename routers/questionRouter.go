@@ -7,9 +7,9 @@ import (
 
 func QestionRoutes(incomingRoutes *gin.Engine) {
 	incomingRoutes.POST("/questions", controller.CreatQestion())
-	incomingRoutes.GET("/questions/:questionId", controller.GetOneQestion())
+	incomingRoutes.GET("/questions/:question_id", controller.GetOneQestion())
 	incomingRoutes.GET("/questions", controller.GetAllQuestion())
-	incomingRoutes.PATCH("/questions/:questionId", controller.UpdateQestion())
+	incomingRoutes.PATCH("/questions/:question_id", controller.UpdateQestion())
 	incomingRoutes.PUT("/questions/:user_id/:question_id/likes", controller.UpdateLikes())
 }
 

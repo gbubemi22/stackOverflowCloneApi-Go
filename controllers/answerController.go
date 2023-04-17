@@ -189,3 +189,82 @@ func UpdateAnswer() gin.HandlerFunc {
 
 	}
 }
+
+func UpdateAnswerLikes() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		user_id := c.Param("user_id")
+		answer_id := c.Param("answer_id ")
+		var answer models.Answer
+		
+		
+		// Retrieve question document using question_id
+		filter := bson.M{"id": answer_id}
+		update := bson.M{"$addToSet": bson.M{"likes": user_id}}
+		
+		err := qestionCollection.FindOneAndUpdate(
+			context.Background(),
+			filter,
+			update,
+			options.FindOneAndUpdate().SetReturnDocument(options.After),
+		).Decode(&answer)
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		if containsA(answer.Likes, user_id) {
+			update = bson.M{"$pull": bson.M{"likes": user_id}}
+			_, err = answerCollection.UpdateOne(
+				context.Background(),
+				filter,
+				update,
+			)
+
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				return
+			}
+
+			answer.Likes = removeA(answer.Likes, user_id)
+		} else {
+			answer.Likes = append(answer.Likes, user_id)
+		}
+
+		update = bson.M{"$set": bson.M{"likes": answer.Likes, "updated_at": time.Now()}}
+		_, err = answerCollection.UpdateOne(
+			context.Background(),
+			filter,
+			update,
+		)
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		c.JSON(http.StatusOK, answer)
+	}
+}
+
+
+
+func containsA(arr []string, val string) bool {
+	for _, item := range arr {
+		if item == val {
+			return true
+		}
+	}
+
+	return false
+}
+
+func removeA(arr []string, val string) []string {
+	for i, item := range arr {
+		if item == val {
+			return append(arr[:i], arr[i+1:]...)
+		}
+	}
+
+	return arr
+}
