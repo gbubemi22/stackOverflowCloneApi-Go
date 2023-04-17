@@ -7,7 +7,7 @@ import (
 	helper "github.com/gbubemi22/go-stackOverflow/helpers"
 	"github.com/gbubemi22/go-stackOverflow/models"
 	"github.com/gin-gonic/gin"
-	"github.com/go-playground/validator/v10"
+	//"github.com/go-playground/validator/v10"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -19,7 +19,7 @@ import (
 )
 
 var userCollection *mongo.Collection = database.OpenCollection(database.Client, "user")
-var validate = *validator.New()
+//var validate = validator.New()
 
 func HashPassword(password string) string {
 	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)

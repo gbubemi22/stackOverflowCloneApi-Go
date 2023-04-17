@@ -27,6 +27,7 @@ func main() {
 
 	 routes.AuthRoutes(router)
 	 routes.UserRoutes(router)
+	 routes.QestionRoutes(router)
 
 	router.GET("/api-1", func(c *gin.Context) {
 		c.JSON(200, gin.H{"success": "Access granted for api-1"})
@@ -36,6 +37,7 @@ func main() {
 		c.JSON(200, gin.H{"success": "Access granted for api-2"})
 	})
 
-	router.Run(":" + port)
+	router.Run(":"  + port)
 
 }
+
