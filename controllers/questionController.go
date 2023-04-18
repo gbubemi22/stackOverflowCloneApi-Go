@@ -1,18 +1,20 @@
 package controllers
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	database "github.com/gbubemi22/go-stackOverflow/database"
 	"github.com/gbubemi22/go-stackOverflow/models"
 	"log"
-
 	"net/http"
 	//"strconv"
-	"time"
-
+	config "github.com/gbubemi22/go-stackOverflow/config"
 	"github.com/gin-gonic/gin"
+	"time"
 	//"github.com/go-playground/validator/v10"
+	"github.com/cloudinary/cloudinary-go"
+	"github.com/cloudinary/cloudinary-go/api/uploader"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -20,6 +22,7 @@ import (
 )
 
 var qestionCollection *mongo.Collection = database.OpenCollection(database.Client, "question")
+
 //var validate = *validator.New()
 
 func CreatQestion() gin.HandlerFunc {
@@ -52,8 +55,6 @@ func CreatQestion() gin.HandlerFunc {
 
 		question.ID = primitive.NewObjectID()
 		question.Question_id = question.ID.Hex()
-
-		
 
 		result, insertErr := qestionCollection.InsertOne(ctx, question)
 
@@ -125,7 +126,6 @@ func UpdateQestion() gin.HandlerFunc {
 			updateObj = append(updateObj, bson.E{"body", question.Body})
 		}
 
-
 		if question.User_id != nil {
 			err := userCollection.FindOne(ctx, bson.M{"user_id": question.User_id}).Decode(&user)
 			defer cancel()
@@ -167,8 +167,6 @@ func UpdateQestion() gin.HandlerFunc {
 	}
 }
 
-
-
 func UpdateLikes() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		user_id := c.Param("user_id")
@@ -178,7 +176,7 @@ func UpdateLikes() gin.HandlerFunc {
 		// Retrieve question document using question_id
 		filter := bson.M{"id": question_id}
 		update := bson.M{"$addToSet": bson.M{"likes": user_id}}
-		
+
 		err := qestionCollection.FindOneAndUpdate(
 			context.Background(),
 			filter,
@@ -243,4 +241,66 @@ func remove(arr []string, val string) []string {
 	}
 
 	return arr
+}
+
+func uploadToCloudinary(imageBytes []byte) (string, error) {
+	// Create Cloudinary configuration
+	cloudinaryConfig, err := cloudinary.NewFromParams(config.EnvCloudName(), config.EnvCloudAPIKey(), config.EnvCloudAPISecret())
+	if err != nil {
+		return "", fmt.Errorf("failed to create Cloudinary configuration: %w", err)
+	}
+
+	// Create context for upload
+	ctx := context.Background()
+
+	// Upload image to Cloudinary
+	uploadResult, err := cloudinaryConfig.Upload.Upload(ctx, bytes.NewReader(imageBytes), uploader.UploadParams{})
+	if err != nil {
+		return "", fmt.Errorf("failed to upload image to Cloudinary: %w", err)
+	}
+
+	return uploadResult.URL, nil
+}
+
+func updateQuestionImage() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		questionID := c.Param("question_id")
+
+		var update struct {
+			Image *string `json:"image" binding:"required"`
+		}
+		if err := c.ShouldBindJSON(&update); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		// Upload image to Cloudinary
+		imageURL, err := uploadToCloudinary([]byte(*update.Image))
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		result, err := qestionCollection.UpdateOne(
+			c.Request.Context(),
+			bson.M{"question_id": questionID},
+			bson.D{
+				{"$set", bson.D{
+					{"image", imageURL},
+					{"updated_at", time.Now()},
+				}},
+			},
+		)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		if result.ModifiedCount == 0 {
+			c.JSON(http.StatusNotFound, gin.H{"error": "question not found"})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{"message": "question updated successfully"})
+	}
 }

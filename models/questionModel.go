@@ -2,7 +2,7 @@ package models
 
 import (
 	"time"
-
+     
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -17,3 +17,5 @@ type Question struct {
 	Likes       []string           `bson:"likes,omitempty" json:"likes,omitempty"`
 	Image       *string            `bson:"image,omitempty" json:"image,omitempty"`
 }
+
+
